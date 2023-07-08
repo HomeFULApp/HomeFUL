@@ -1,0 +1,38 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.Components.Web
+@namespace HomeFUL.Pages
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <base href="~/" />
+    <link rel="stylesheet" href="css/bootstrap/bootstrap.min.css" />
+    <link href="css/site.css" rel="stylesheet" />
+    <link href="HomeFUL.styles.css" rel="stylesheet" />
+    <link rel="icon" type="image/png" href="favicon.png"/>
+    <component type="typeof(HeadOutlet)" render-mode="ServerPrerendered" />
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDS1HpX4cEVP1MXanx2DAam71Q68U4VxOk&v=3&libraries=places,visualization,drawing"></script>
+    <script src="javascript/geolocation.js"></script>
+    <script src="_content/BlazorGoogleMaps/js/objectManager.js"></script>
+    <script src="https://unpkg.com/@@googlemaps/markerclusterer/dist/index.min.js"></script>
+</head>
+<body>
+    <component type="typeof(App)" render-mode="ServerPrerendered" />
+
+    <div id="blazor-error-ui">
+        <environment include="Staging,Production">
+            An error has occurred. This application may no longer respond until reloaded.
+        </environment>
+        <environment include="Development">
+            An unhandled exception has occurred. See browser dev tools for details.
+        </environment>
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+
+    <script src="_framework/blazor.server.js"></script>
+</body>
+</html>

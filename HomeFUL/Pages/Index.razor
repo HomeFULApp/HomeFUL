@@ -1,0 +1,26 @@
+﻿@page "/"
+
+@if (SearchTerm == "")
+{
+    <button @onclick="@(() => SetMapInfo("homeless shelter", "Nearby Shelter"))">Find Nearby Shelter</button>
+    <button @onclick="@(() => SetMapInfo("food bank", "Nearby Food Resources"))">Find Nearby Food Resources</button>
+    <button @onclick="@(() => SetMapInfo("pizza hut", "Nearby Pizza"))">Find Pizza</button>
+}
+else
+{
+    <MapInfo SearchTerm="@SearchTerm" Title="@MapInfoTitle"></MapInfo>
+}
+
+@code
+{
+    private string SearchTerm = "";
+    private string MapInfoTitle = "";
+
+    private void SetMapInfo(string searchTerm, string mapInfoTitle)
+    {
+        SearchTerm = searchTerm;
+        MapInfoTitle = mapInfoTitle;
+
+        InvokeAsync(() => StateHasChanged());
+    }
+}
