@@ -1,5 +1,14 @@
 @import url('open-iconic/font/css/open-iconic-bootstrap.min.css');
 
+:root {
+    --primary-color: #3498db;
+    --primary-color-dark: #2980b9;
+    --bg-color: #ecf0f1;
+    --font-color: #2c3e50;
+    --btn-color: white;
+    --border-radius: 8px;
+}
+
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }

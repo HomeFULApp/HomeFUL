@@ -3,17 +3,9 @@
 @using GoogleMapsComponents.Maps.Places
 @using Microsoft.JSInterop;
 @inject IJSRuntime JSRuntime
-@*
-    The code for this sample was taken from below on 09/02/2020:
-    https://developers-dot-devsite-v2-prod.appspot.com/maps/documentation/javascript/examples/places-autocomplete
-*@
+@inject NavigationManager NavigationManager
 
-<h1>@Title</h1>
-
-
-<div>
-    <p style="font-weight: bold; font-size: 1.2em">@this.message</p>
-</div>
+<h1 style="padding-top:30px">@Title</h1>
 
 <GoogleMap @ref="@(this.map1)" Id="map1" Options="@(this.mapOptions)" OnAfterInit="async () => await OnAfterMapInit()"></GoogleMap>
 
@@ -26,13 +18,22 @@
         }
         else
         {
+            <div class="container">
+                <div class="map-results">
+                    @foreach (var item in this.suggestions)
+                    {
+                        <div class="map-result">
+                            <h4>@item.Description</h4>
+                            <div class="buttons">
+                                <button @onclick="async () => await GetPlaceDetailAsync(item.PlaceId)" class="pin-btn">Drop Pin</button>
+                                <button @onclick="() => GenerateGoogleMapsLink(item.PlaceId)" class="map-btn">Map To</button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
             <ol>
-                @foreach (var item in this.suggestions)
-                {
-                    <li @key="item.PlaceId">
-                        <button role="button" @onclick="async () => await GetPlaceDetailAsync(item.PlaceId)">@item.Description</button>
-                    </li>
-                }
+
             </ol>
         }
     </div>
@@ -101,7 +102,7 @@
         this.geocoder = await Geocoder.CreateAsync(this.map1.JsRuntime);
 
         await GetLocation();
-        
+
         await map1.InteropObject.PanTo(new LatLngLiteral()
             {
                 Lat = latitude,
@@ -113,9 +114,6 @@
 
     private async Task<AutocompleteSessionToken> GetOrCreateTokenAsync()
     {
-        // It is not officially documented how long a session token is valid for.
-        // Google only says "a few minutes", but there is one mention of 3 minutes in StackOverflow
-        // https://stackoverflow.com/questions/50398801/how-long-do-the-new-places-api-session-tokens-last
         if (token is null || tokenStamp == DateTime.MinValue || tokenStamp.AddMinutes(3).CompareTo(DateTime.Now) < 1)
         {
             this.token?.Dispose();
@@ -149,15 +147,23 @@
 
     private async Task SearchAsync()
     {
-        //This can be executed on every key stroke with 300ms debounce, but I decided to use the search button
-        //These requests will be bundled together via the session token until it either expires or placesService.GetDetails is executed.
-        //Every session is charged (billed). If session token is omitted/invalid/expired, every request is charged (billed).
         if (autocompleteService is null || !IsValidInput()) return;
+
+        double offsetLat = 0.0723 * 5;  // approximately 5 miles of latitude
+        double offsetLng = 0.0909 * 5;  // approximately 5 miles of longitude
+
+        LatLngBoundsLiteral bounds = new LatLngBoundsLiteral
+            {
+                South = latitude - offsetLat,  // Southwest latitude
+                West = longitude - offsetLng,  // Southwest longitude
+                North = latitude + offsetLat,  // Northeast latitude
+                East = longitude + offsetLng   // Northeast longitude
+            };
 
         var request = new AutocompletionRequest
             {
                 Input = SearchTerm,
-                SessionToken = await GetOrCreateTokenAsync(),
+                SessionToken = await GetOrCreateTokenAsync()
             };
 
         var response = await autocompleteService.GetPlacePredictions(request);
@@ -183,7 +189,7 @@
             foreach (var result in response.Results)
             {
                 await RenderLocationAsync(result.FormattedAddress, result.Geometry.Location);
-                bounds.Extend(result.Geometry.Location);
+                await bounds.Extend(result.Geometry.Location);
             }
 
             await this.map1.InteropObject.FitBounds(await bounds.ToJson(), 5);
@@ -211,9 +217,32 @@
         finally
         {
             //After a request to PlacesService, the token is no longer valid
-            this.token.Dispose();
+            this?.token?.Dispose();
             this.token = null;
         }
+    }
+
+    public async Task<string> GenerateGoogleMapsLink(string toPlaceId)
+    {
+        string baseUrl = "https://www.google.com/maps/dir/?api=1";
+        string origin = $"&origin={latitude},{longitude}";
+        string travelMode = "&travelmode=walking";
+
+        var place = await placesService.GetDetails(new PlaceDetailsRequest
+            {
+                PlaceId = toPlaceId,
+                Fields = new string[] { "address_components", "formatted_address", "geometry", "name", "place_id" },
+                SessionToken = await GetOrCreateTokenAsync()
+            });
+
+        if (place.Status == PlaceServiceStatus.Ok)
+        {
+            string destination = $"&destination={place.Results.First().FormattedAddress}";
+            await JSRuntime.InvokeVoidAsync("window.open", baseUrl + origin + destination + travelMode, "_blank");
+          //  NavigationManager.NavigateTo(baseUrl + origin + destination + travelMode, forceLoad: true, replace:);
+        }
+
+        return "";
     }
 
     private async Task RenderLocationAsync(string title, LatLngLiteral location)
@@ -230,7 +259,6 @@
 
     private async Task RenderPlaceAsync(PlaceResult? place)
     {
-        //Below code borrowed from MapAutocomplete.razor "place_changed" event handler
         if (place?.Geometry == null)
         {
             this.message = "No results available for " + place?.Name;
