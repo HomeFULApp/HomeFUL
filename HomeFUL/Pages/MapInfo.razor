@@ -11,10 +11,10 @@
 
 <div style="margin-bottom: 10px;">
     <div>
-        <span>Suggestions:</span><br />
+        <span>Nearby Locations:</span><br />
         @if ((this.suggestions?.Length ?? 0) == 0)
         {
-            <span>No suggestions</span>
+            <span>No locations found nearby</span>
         }
         else
         {
@@ -32,9 +32,6 @@
                     }
                 </div>
             </div>
-            <ol>
-
-            </ol>
         }
     </div>
 </div>
@@ -216,7 +213,6 @@
         }
         finally
         {
-            //After a request to PlacesService, the token is no longer valid
             this?.token?.Dispose();
             this.token = null;
         }
@@ -226,7 +222,7 @@
     {
         string baseUrl = "https://www.google.com/maps/dir/?api=1";
         string origin = $"&origin={latitude},{longitude}";
-        string travelMode = "&travelmode=walking";
+        string travelMode = "&travelmode=transit";
 
         var place = await placesService.GetDetails(new PlaceDetailsRequest
             {
@@ -239,7 +235,6 @@
         {
             string destination = $"&destination={place.Results.First().FormattedAddress}";
             await JSRuntime.InvokeVoidAsync("window.open", baseUrl + origin + destination + travelMode, "_blank");
-          //  NavigationManager.NavigateTo(baseUrl + origin + destination + travelMode, forceLoad: true, replace:);
         }
 
         return "";
